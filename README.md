@@ -5,9 +5,9 @@
 ## TensorFlow Serving with Docker
 ```
 # Variables
-gcs_path_to_model="gs://model_artificats/bert_model_z1.tar.gz"
+gcs_path_to_model="gs://model_artificats/toxicity_model_z1.tar.gz"
 gcs_model_filename=${gcs_path_to_model##*/}
-model_path="$(pwd)/saved_model/1/bert_model_z1"
+model_path="$(pwd)/saved_models/"
 model_name=bert_model
 
 # Install Docker (if not already installed)
@@ -27,16 +27,17 @@ sudo usermod -aG docker $USER
 
 # Pull Docker dependencies and run container for model serving
 sudo docker pull tensorflow/serving
-gsutil cp -r "$gcs_path_to_model" .
+gsutil cp "$gcs_path_to_model" .
 tar -zxvf $gcs_model_filename
-# Mkdir with version number (1 = v1)
-mkdir 1
-mv "$model_path"/* 1
-mv 1 "$model_path"
 sudo docker run -t --rm -p 8501:8501 -v "$model_path:/models/$model_name" -e MODEL_NAME=$model_name tensorflow/serving &
 ```
 
-# Tensorflow Client (installation and testing)
+# Client Installation and Testing (pure REST)
+```
+curl -d '{"inputs":{"text": ["you suck at this game, i hate you. this is terrible."]}}' -X POST http://localhost:8501/v1/models/$model_name:predict
+```
+
+# Client Installation and Testing (with Tensorflow pre-processing)
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 chmod +x Miniconda3-latest-Linux-x86_64.sh
